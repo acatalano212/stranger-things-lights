@@ -15,21 +15,14 @@ import threading
 import logging
 from queue import Queue, Empty
 
-from rpi_ws281x import PixelStrip
 from flask import Flask, render_template, request, jsonify
 
 from letter_map import (
     DEFAULT_MESSAGE, MESSAGE_INTERVAL, CUSTOM_MESSAGE_PLAYS,
-    NUM_LEDS, LED_PIN, LED_FREQ_HZ, LED_DMA,
-    LED_BRIGHTNESS, LED_INVERT, LED_CHANNEL,
-    PIR_PIN, MOTION_COOLDOWN,
+    NUM_LEDS, PIR_PIN, MOTION_COOLDOWN,
 )
 from led_effects import (
-    ChristmasIdle, display_message, motion_spook, clear,
-)
-from sound_effects import (
-    init_audio, play_flicker_sound, play_spook_sound,
-    play_startup_sound, cleanup_audio,
+    ChristmasIdle, create_strip, display_message, motion_spook, clear,
 )
 
 # ── Logging ─────────────────────────────────────────────────────
@@ -55,10 +48,9 @@ shutdown_event = threading.Event()
 # Current status for the web UI
 current_status = {"state": "idle", "message": ""}
 
-# ── Optional: PIR Sensor + Audio ────────────────────────────────
+# ── Optional: PIR Sensor ────────────────────────────────────────
 
 PIR_AVAILABLE = False
-AUDIO_AVAILABLE = False
 
 try:
     import RPi.GPIO as GPIO
@@ -68,15 +60,6 @@ try:
     log.info(f"PIR sensor ready on GPIO {PIR_PIN}")
 except Exception as e:
     log.warning(f"PIR sensor not available: {e}")
-
-try:
-    AUDIO_AVAILABLE = init_audio()
-    if AUDIO_AVAILABLE:
-        log.info("GPIO audio ready on speaker pin")
-    else:
-        log.warning("GPIO audio not available")
-except Exception as e:
-    log.warning(f"Audio init failed: {e}")
 
 # ── LED Control Thread ──────────────────────────────────────────
 
@@ -101,8 +84,6 @@ def led_thread(strip):
             current_status["message"] = custom_msg
 
             with led_lock:
-                if AUDIO_AVAILABLE:
-                    play_flicker_sound()
                 for play in range(CUSTOM_MESSAGE_PLAYS):
                     log.info(f"  Playing custom message ({play + 1}/{CUSTOM_MESSAGE_PLAYS})")
                     display_message(strip, custom_msg)
@@ -125,8 +106,6 @@ def led_thread(strip):
             current_status["message"] = DEFAULT_MESSAGE
 
             with led_lock:
-                if AUDIO_AVAILABLE:
-                    play_flicker_sound()
                 display_message(strip, DEFAULT_MESSAGE)
 
             idle = ChristmasIdle(strip)
@@ -143,8 +122,6 @@ def led_thread(strip):
                 current_status["state"] = "motion"
 
                 with led_lock:
-                    if AUDIO_AVAILABLE:
-                        play_spook_sound()
                     motion_spook(strip)
 
                 idle = ChristmasIdle(strip)
@@ -205,23 +182,14 @@ def main():
     log.info("Stranger Things Wall Lights")
     log.info("=" * 50)
 
-    # Check for root (required by rpi_ws281x for DMA access)
+    # Check for root (required by neopixel for DMA access)
     if os.geteuid() != 0:
         log.error("Must run as root (sudo) for LED control!")
         sys.exit(1)
 
     # Initialize LED strip
-    strip = PixelStrip(
-        NUM_LEDS, LED_PIN, LED_FREQ_HZ,
-        LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL
-    )
-    strip.begin()
-    log.info(f"LED strip initialized: {NUM_LEDS} LEDs on GPIO {LED_PIN}")
-
-    # Play startup sound
-    if AUDIO_AVAILABLE:
-        play_startup_sound()
-        log.info("Startup sound played")
+    strip = create_strip()
+    log.info(f"LED strip initialized: {NUM_LEDS} LEDs on GPIO 18")
 
     # Start LED control thread
     led_t = threading.Thread(target=led_thread, args=(strip,), daemon=True)
@@ -238,7 +206,6 @@ def main():
         shutdown_event.set()
         led_t.join(timeout=5)
         clear(strip)
-        cleanup_audio()
         if PIR_AVAILABLE:
             GPIO.cleanup()
         log.info("Goodbye!")

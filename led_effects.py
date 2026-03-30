@@ -1,14 +1,15 @@
 """
 LED effects for Stranger Things Wall Lights.
 
-All effects operate on a rpi_ws281x PixelStrip instance.
+All effects operate on a neopixel.NeoPixel instance.
 Effects are designed to be called from the main loop and block
 until the effect completes (the main app runs them in a thread).
 """
 
 import time
 import random
-from rpi_ws281x import Color
+import neopixel
+import board
 from letter_map import LETTER_MAP, NUM_LEDS
 
 
@@ -35,22 +36,26 @@ FLICKER_DIM = (40, 15, 0)
 
 # ── Helper Functions ────────────────────────────────────────────
 
-def color(r, g, b):
-    """Create a Color from RGB tuple."""
-    return Color(r, g, b)
+def create_strip():
+    """Create and return a NeoPixel strip instance."""
+    return neopixel.NeoPixel(
+        board.D18, NUM_LEDS,
+        brightness=1.0,
+        auto_write=False,
+        pixel_order=neopixel.RGB
+    )
 
 
 def set_all(strip, r, g, b):
     """Set all LEDs to the same color."""
-    c = Color(r, g, b)
-    for i in range(strip.numPixels()):
-        strip.setPixelColor(i, c)
+    strip.fill((r, g, b))
     strip.show()
 
 
 def clear(strip):
     """Turn off all LEDs."""
-    set_all(strip, 0, 0, 0)
+    strip.fill((0, 0, 0))
+    strip.show()
 
 
 # ── Idle Animation: Christmas Lights ───────────────────────────
@@ -64,7 +69,7 @@ class ChristmasIdle:
 
     def __init__(self, strip):
         self.strip = strip
-        self.num = strip.numPixels()
+        self.num = NUM_LEDS
         # Assign a random Christmas color to each LED
         self.base_colors = [
             random.choice(CHRISTMAS_COLORS) for _ in range(self.num)
@@ -82,18 +87,17 @@ class ChristmasIdle:
         for i in range(self.num):
             r, g, b = self.base_colors[i]
             m = self.brightness[i]
-            self.strip.setPixelColor(i, Color(int(r * m), int(g * m), int(b * m)))
+            self.strip[i] = (int(r * m), int(g * m), int(b * m))
         self.strip.show()
 
     def step(self):
         """
         Advance one animation frame. Call this in a loop with ~50ms delay.
-        Returns immediately — non-blocking.
+        Returns immediately -- non-blocking.
         """
         # Pick a few random LEDs to twinkle
         for _ in range(random.randint(1, 4)):
             idx = random.randint(0, self.num - 1)
-            # Randomly brighten or dim
             if random.random() < 0.5:
                 self.target[idx] = random.uniform(0.8, 1.0)
             else:
@@ -102,7 +106,7 @@ class ChristmasIdle:
         # Smoothly move brightness toward target
         for i in range(self.num):
             diff = self.target[i] - self.brightness[i]
-            self.brightness[i] += diff * 0.15  # easing factor
+            self.brightness[i] += diff * 0.15
 
         # Occasionally reassign a color to keep it interesting
         if random.random() < 0.02:
@@ -121,27 +125,24 @@ def flicker_transition(strip, duration=2.0):
     """
     end_time = time.time() + duration
     while time.time() < end_time:
-        # Random flash
         if random.random() < 0.4:
-            # Brief bright flash on random subset
-            for i in range(strip.numPixels()):
+            for i in range(NUM_LEDS):
                 if random.random() < 0.3:
                     r, g, b = FLICKER_DIM
                     m = random.uniform(1.0, 3.0)
-                    strip.setPixelColor(i, Color(
+                    strip[i] = (
                         min(255, int(r * m)),
                         min(255, int(g * m)),
                         min(255, int(b * m))
-                    ))
+                    )
                 else:
-                    strip.setPixelColor(i, Color(0, 0, 0))
+                    strip[i] = (0, 0, 0)
         else:
-            # Mostly dark with a few dim flickers
-            for i in range(strip.numPixels()):
+            for i in range(NUM_LEDS):
                 if random.random() < 0.1:
-                    strip.setPixelColor(i, Color(*FLICKER_DIM))
+                    strip[i] = FLICKER_DIM
                 else:
-                    strip.setPixelColor(i, Color(0, 0, 0))
+                    strip[i] = (0, 0, 0)
         strip.show()
         time.sleep(random.uniform(0.03, 0.15))
 
@@ -161,30 +162,29 @@ def spell_message(strip, message):
 
     for char in message:
         if char == ' ':
-            # Word gap — brief darkness
             time.sleep(0.8)
             continue
 
         if char not in LETTER_MAP:
-            continue  # skip unmapped characters
+            continue
 
         led_idx = LETTER_MAP[char]
         r, g, b = LETTER_COLOR
 
-        # Quick flicker before lighting the letter (like the bulb struggling)
+        # Quick flicker before lighting the letter
         for _ in range(random.randint(2, 4)):
             brightness = random.uniform(0.1, 0.5)
-            strip.setPixelColor(led_idx, Color(
+            strip[led_idx] = (
                 int(r * brightness), int(g * brightness), int(b * brightness)
-            ))
+            )
             strip.show()
             time.sleep(random.uniform(0.04, 0.1))
-            strip.setPixelColor(led_idx, Color(0, 0, 0))
+            strip[led_idx] = (0, 0, 0)
             strip.show()
             time.sleep(random.uniform(0.03, 0.08))
 
         # Light up the letter fully
-        strip.setPixelColor(led_idx, Color(r, g, b))
+        strip[led_idx] = (r, g, b)
         strip.show()
         time.sleep(0.6)
 
@@ -192,11 +192,11 @@ def spell_message(strip, message):
         steps = 10
         for s in range(steps):
             m = 1.0 - (s / steps)
-            strip.setPixelColor(led_idx, Color(int(r * m), int(g * m), int(b * m)))
+            strip[led_idx] = (int(r * m), int(g * m), int(b * m))
             strip.show()
             time.sleep(0.03)
 
-        strip.setPixelColor(led_idx, Color(0, 0, 0))
+        strip[led_idx] = (0, 0, 0)
         strip.show()
         time.sleep(0.2)
 
@@ -222,40 +222,34 @@ def display_message(strip, message):
 
 def motion_spook(strip, duration=3.0):
     """
-    Triggered by PIR sensor — rapid chaotic flickering like
-    the Upside Down is breaking through. More intense than
-    the normal flicker transition.
+    Triggered by PIR sensor -- rapid chaotic flickering like
+    the Upside Down is breaking through.
     """
     end_time = time.time() + duration
 
     while time.time() < end_time:
-        # Intense random strobing
-        for i in range(strip.numPixels()):
+        for i in range(NUM_LEDS):
             if random.random() < 0.2:
-                # Random color flash — reds and cold whites
                 if random.random() < 0.5:
-                    strip.setPixelColor(i, Color(
+                    strip[i] = (
                         random.randint(150, 255),
                         random.randint(0, 30),
                         random.randint(0, 20)
-                    ))
+                    )
                 else:
                     v = random.randint(100, 255)
-                    strip.setPixelColor(i, Color(v, v, v))
+                    strip[i] = (v, v, v)
             else:
-                strip.setPixelColor(i, Color(0, 0, 0))
+                strip[i] = (0, 0, 0)
         strip.show()
         time.sleep(random.uniform(0.02, 0.08))
 
     # Fade out
     for step in range(20):
         m = 1.0 - (step / 20)
-        for i in range(strip.numPixels()):
-            c = strip.getPixelColor(i)
-            r = int(((c >> 16) & 0xFF) * m)
-            g = int(((c >> 8) & 0xFF) * m)
-            b = int((c & 0xFF) * m)
-            strip.setPixelColor(i, Color(r, g, b))
+        for i in range(NUM_LEDS):
+            r, g, b = strip[i]
+            strip[i] = (int(r * m), int(g * m), int(b * m))
         strip.show()
         time.sleep(0.04)
 

@@ -55,7 +55,7 @@ MESSAGE_INTERVAL = 300  # 5 minutes
 CUSTOM_MESSAGE_PLAYS = 2
 
 # Total number of LEDs on the string
-NUM_LEDS = 100
+NUM_LEDS = 50
 
 # GPIO pin for LED data (must be PWM-capable: GPIO 18 = PWM0)
 LED_PIN = 18
@@ -66,6 +66,10 @@ LED_DMA = 10
 LED_BRIGHTNESS = 200  # 0-255
 LED_INVERT = False
 LED_CHANNEL = 0
+
+# LED strip type — change if colors look wrong
+# Options: WS2811_STRIP_RGB, WS2811_STRIP_GRB, WS2811_STRIP_BRG
+LED_STRIP_TYPE = 'GRB'
 
 # GPIO pin for PIR motion sensor (optional)
 PIR_PIN = 17

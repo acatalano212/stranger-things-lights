@@ -1,3 +1,4 @@
-rpi_ws281x==5.0.0
+adafruit-circuitpython-neopixel==6.4.1
+adafruit-blinka==9.0.4
 flask==3.0.3
 RPi.GPIO==0.7.1
