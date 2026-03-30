@@ -1,0 +1,16 @@
+[Unit]
+Description=Stranger Things Wall Lights
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/stranger-things-lights/app.py
+WorkingDirectory=/opt/stranger-things-lights
+Restart=always
+RestartSec=5
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
