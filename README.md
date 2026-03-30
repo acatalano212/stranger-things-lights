@@ -18,7 +18,7 @@ Recreate the iconic Stranger Things alphabet wall with real Christmas lights. A 
 | LEDs | 100x WS2811 RGB (12V, individually addressable) |
 | Power | 12V power supply (5A+ recommended) |
 | Level Shifter | SN74AHCT125 or similar (3.3V → 5V for data line) |
-| Speaker | 3W 8Ω with JST-PH2.0 (driven via GPIO PWM + transistor) |
+| Speaker | 3W 8Ω with JST-PH2.0 (driven via PAM8403 amp) |
 | Motion Sensor | PIR sensor (optional) |
 
 ## Wiring
@@ -33,9 +33,8 @@ Raspberry Pi 3B+
   ├── GPIO 18 (Pin 12) ──→ Level Shifter IN
   ├── 3.3V (Pin 1) ──────→ Level Shifter LV
   ├── GND (Pin 6) ───────→ Level Shifter GND (both sides)
-  ├── GPIO 13 (Pin 33) ──→ 1kΩ resistor ──→ Transistor base (speaker)
   ├── GPIO 17 (Pin 11) ──→ PIR sensor OUT (optional)
-  ├── 5V (Pin 2) ────────→ Speaker (+) via transistor collector(optional)
+  ├── 3.5mm jack ────────→ PAM8403 amp input(optional)
   │
 Level Shifter (SN74AHCT125)
   ├── HV ────────→ 5V (Pi Pin 2)
@@ -106,16 +105,16 @@ Edit `letter_map.py` to change:
 
 ## Sound Effects
 
-Sound is generated via **GPIO PWM** — no audio files needed. The speaker is driven through a transistor on GPIO 13:
+Sound is generated programmatically (no .wav files needed) and played through the Pi's **3.5mm audio jack** via a **PAM8403 amplifier** to the speaker:
 
 ```
-GPIO 13 (Pin 33) ──→ 1kΩ resistor ──→ 2N2222 Base
-                                        Collector ──→ Speaker (−)
-                                        Emitter ──→ GND
-5V (Pin 2) ───────────────────────────→ Speaker (+)
+Pi 3.5mm jack ──→ PAM8403 input (L or R channel + GND)
+PAM8403 output ──→ Speaker (JST-PH2.0 connector)
+PAM8403 VCC ─────→ Pi 5V (Pin 2) or 3.3V-5V source
+PAM8403 GND ─────→ Pi GND
 ```
 
-Effects are generated programmatically:
+Effects are generated as waveforms and played via `aplay`:
 - **Flicker sound** — electrical buzzing during message transitions
 - **Letter tones** — short pitched tone for each letter (A=low, Z=high)
 - **Spook sound** — deep drones and eerie sweeps on motion detection
