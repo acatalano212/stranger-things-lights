@@ -70,5 +70,8 @@ LED_CHANNEL = 0
 # GPIO pin for PIR motion sensor (optional)
 PIR_PIN = 17
 
+# GPIO pin for speaker (via transistor — GPIO 13 = PWM1)
+SPEAKER_PIN = 13
+
 # Motion sensor cooldown (seconds)
 MOTION_COOLDOWN = 30

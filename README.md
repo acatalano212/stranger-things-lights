@@ -18,7 +18,7 @@ Recreate the iconic Stranger Things alphabet wall with real Christmas lights. A 
 | LEDs | 100x WS2811 RGB (12V, individually addressable) |
 | Power | 12V power supply (5A+ recommended) |
 | Level Shifter | SN74AHCT125 or similar (3.3V → 5V for data line) |
-| Speaker | 3.5mm jack or USB (optional) |
+| Speaker | 3W 8Ω with JST-PH2.0 (driven via GPIO PWM + transistor) |
 | Motion Sensor | PIR sensor (optional) |
 
 ## Wiring
@@ -33,8 +33,9 @@ Raspberry Pi 3B+
   ├── GPIO 18 (Pin 12) ──→ Level Shifter IN
   ├── 3.3V (Pin 1) ──────→ Level Shifter LV
   ├── GND (Pin 6) ───────→ Level Shifter GND (both sides)
+  ├── GPIO 13 (Pin 33) ──→ 1kΩ resistor ──→ Transistor base (speaker)
   ├── GPIO 17 (Pin 11) ──→ PIR sensor OUT (optional)
-  ├── 3.5mm jack ────────→ Speaker (optional)
+  ├── 5V (Pin 2) ────────→ Speaker (+) via transistor collector(optional)
   │
 Level Shifter (SN74AHCT125)
   ├── HV ────────→ 5V (Pi Pin 2)
@@ -105,9 +106,20 @@ Edit `letter_map.py` to change:
 
 ## Sound Effects
 
-Place `.wav` files in the `sounds/` directory:
-- `flicker.wav` — plays during message flicker transitions
-- `upside_down.wav` — plays on motion detection
+Sound is generated via **GPIO PWM** — no audio files needed. The speaker is driven through a transistor on GPIO 13:
+
+```
+GPIO 13 (Pin 33) ──→ 1kΩ resistor ──→ 2N2222 Base
+                                        Collector ──→ Speaker (−)
+                                        Emitter ──→ GND
+5V (Pin 2) ───────────────────────────→ Speaker (+)
+```
+
+Effects are generated programmatically:
+- **Flicker sound** — electrical buzzing during message transitions
+- **Letter tones** — short pitched tone for each letter (A=low, Z=high)
+- **Spook sound** — deep drones and eerie sweeps on motion detection
+- **Startup chime** — ascending tone sequence on boot
 
 ## Project Structure
 
@@ -115,6 +127,7 @@ Place `.wav` files in the `sounds/` directory:
 stranger-things-lights/
 ├── app.py                    # Main app: Flask + LED control + scheduling
 ├── led_effects.py            # All LED animations and effects
+├── sound_effects.py          # GPIO PWM sound generation
 ├── letter_map.py             # Configuration: letter mapping + settings
 ├── requirements.txt          # Python dependencies
 ├── install.sh                # Setup script

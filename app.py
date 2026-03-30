@@ -27,6 +27,10 @@ from letter_map import (
 from led_effects import (
     ChristmasIdle, display_message, motion_spook, clear,
 )
+from sound_effects import (
+    init_audio, play_flicker_sound, play_spook_sound,
+    play_startup_sound, cleanup_audio,
+)
 
 # ── Logging ─────────────────────────────────────────────────────
 
@@ -66,29 +70,13 @@ except Exception as e:
     log.warning(f"PIR sensor not available: {e}")
 
 try:
-    import pygame
-    pygame.mixer.init()
-    AUDIO_AVAILABLE = True
-    log.info("Audio system ready")
+    AUDIO_AVAILABLE = init_audio()
+    if AUDIO_AVAILABLE:
+        log.info("GPIO audio ready on speaker pin")
+    else:
+        log.warning("GPIO audio not available")
 except Exception as e:
-    log.warning(f"Audio not available: {e}")
-
-# ── Sound Effects ───────────────────────────────────────────────
-
-SOUNDS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds")
-
-def play_sound(filename):
-    """Play a sound file if audio is available."""
-    if not AUDIO_AVAILABLE:
-        return
-    filepath = os.path.join(SOUNDS_DIR, filename)
-    if os.path.exists(filepath):
-        try:
-            pygame.mixer.music.load(filepath)
-            pygame.mixer.music.play()
-            log.info(f"Playing sound: {filename}")
-        except Exception as e:
-            log.warning(f"Failed to play {filename}: {e}")
+    log.warning(f"Audio init failed: {e}")
 
 # ── LED Control Thread ──────────────────────────────────────────
 
@@ -113,7 +101,8 @@ def led_thread(strip):
             current_status["message"] = custom_msg
 
             with led_lock:
-                play_sound("flicker.wav")
+                if AUDIO_AVAILABLE:
+                    play_flicker_sound()
                 for play in range(CUSTOM_MESSAGE_PLAYS):
                     log.info(f"  Playing custom message ({play + 1}/{CUSTOM_MESSAGE_PLAYS})")
                     display_message(strip, custom_msg)
@@ -136,7 +125,8 @@ def led_thread(strip):
             current_status["message"] = DEFAULT_MESSAGE
 
             with led_lock:
-                play_sound("flicker.wav")
+                if AUDIO_AVAILABLE:
+                    play_flicker_sound()
                 display_message(strip, DEFAULT_MESSAGE)
 
             idle = ChristmasIdle(strip)
@@ -153,7 +143,8 @@ def led_thread(strip):
                 current_status["state"] = "motion"
 
                 with led_lock:
-                    play_sound("upside_down.wav")
+                    if AUDIO_AVAILABLE:
+                        play_spook_sound()
                     motion_spook(strip)
 
                 idle = ChristmasIdle(strip)
@@ -227,6 +218,11 @@ def main():
     strip.begin()
     log.info(f"LED strip initialized: {NUM_LEDS} LEDs on GPIO {LED_PIN}")
 
+    # Play startup sound
+    if AUDIO_AVAILABLE:
+        play_startup_sound()
+        log.info("Startup sound played")
+
     # Start LED control thread
     led_t = threading.Thread(target=led_thread, args=(strip,), daemon=True)
     led_t.start()
@@ -242,6 +238,7 @@ def main():
         shutdown_event.set()
         led_t.join(timeout=5)
         clear(strip)
+        cleanup_audio()
         if PIR_AVAILABLE:
             GPIO.cleanup()
         log.info("Goodbye!")
