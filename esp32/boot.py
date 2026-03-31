@@ -1,12 +1,18 @@
-"""Boot: connect to WiFi."""
+"""Boot: connect to WiFi with static IP."""
 import network
 import time
 
-SSID = "Cat-House"
-PASSWORD = "sweetcookies123425"
+SSID = "UTG_Private"
+PASSWORD = "Multiball26!"
+
+STATIC_IP = "192.168.1.99"
+GATEWAY = "192.168.1.1"
+SUBNET = "255.255.255.0"
+DNS = "8.8.8.8"
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
+wlan.ifconfig((STATIC_IP, SUBNET, GATEWAY, DNS))
 
 if not wlan.isconnected():
     print(f"Connecting to {SSID}...")
