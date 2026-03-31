@@ -10,21 +10,19 @@ import time
 import random
 import neopixel
 import board
-from letter_map import LETTER_MAP, NUM_LEDS
+from letter_map import NUM_LEDS
+import config
 
 
 # ── Color Palettes ──────────────────────────────────────────────
 
 # Warm Christmas light colors (R, G, B)
 CHRISTMAS_COLORS = [
-    (255, 30, 0),    # warm red
-    (0, 180, 0),     # green
-    (255, 170, 0),   # warm gold/amber
-    (0, 80, 255),    # blue
-    (255, 80, 0),    # orange
-    (200, 0, 80),    # magenta/pink
-    (0, 200, 100),   # teal
-    (255, 255, 80),  # warm white/yellow
+    (255, 0, 0),      # red
+    (0, 150, 0),      # green
+    (0, 0, 255),      # blue
+    (255, 200, 0),    # yellow
+    (150, 0, 255),    # purple
 ]
 
 # Letter highlight color — bright warm white with a slight yellow tint
@@ -70,9 +68,9 @@ class ChristmasIdle:
     def __init__(self, strip):
         self.strip = strip
         self.num = NUM_LEDS
-        # Assign a random Christmas color to each LED
+        # Assign colors in a repeating pattern: R, G, B, Y, P, R, G, B...
         self.base_colors = [
-            random.choice(CHRISTMAS_COLORS) for _ in range(self.num)
+            CHRISTMAS_COLORS[i % len(CHRISTMAS_COLORS)] for i in range(self.num)
         ]
         # Current brightness multiplier per LED (0.0 - 1.0)
         self.brightness = [
@@ -165,10 +163,11 @@ def spell_message(strip, message):
             time.sleep(0.8)
             continue
 
-        if char not in LETTER_MAP:
+        letter_map = config.get_letter_map()
+        if char not in letter_map:
             continue
 
-        led_idx = LETTER_MAP[char]
+        led_idx = letter_map[char]
         r, g, b = LETTER_COLOR
 
         # Quick flicker before lighting the letter

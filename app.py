@@ -13,9 +13,10 @@ import sys
 import time
 import threading
 import logging
+import functools
 from queue import Queue, Empty
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
 from letter_map import (
     DEFAULT_MESSAGE, MESSAGE_INTERVAL, CUSTOM_MESSAGE_PLAYS,
@@ -24,6 +25,7 @@ from letter_map import (
 from led_effects import (
     ChristmasIdle, create_strip, display_message, motion_spook, clear,
 )
+import config
 
 # ── Logging ─────────────────────────────────────────────────────
 
@@ -47,6 +49,12 @@ shutdown_event = threading.Event()
 
 # Current status for the web UI
 current_status = {"state": "idle", "message": ""}
+
+# Reference to the LED strip (set in main, used by admin test-led)
+_strip = None
+
+# Admin password
+ADMIN_PASSWORD = "utgst"
 
 # ── Optional: PIR Sensor ────────────────────────────────────────
 
@@ -100,13 +108,15 @@ def led_thread(strip):
             pass
 
         # Check for scheduled default message
-        if now - last_message_time >= MESSAGE_INTERVAL:
-            log.info(f"Scheduled message: '{DEFAULT_MESSAGE}'")
+        default_msg = config.get_default_message()
+        interval = config.get_message_interval()
+        if now - last_message_time >= interval:
+            log.info(f"Scheduled message: '{default_msg}'")
             current_status["state"] = "message"
-            current_status["message"] = DEFAULT_MESSAGE
+            current_status["message"] = default_msg
 
             with led_lock:
-                display_message(strip, DEFAULT_MESSAGE)
+                display_message(strip, default_msg)
 
             idle = ChristmasIdle(strip)
             last_message_time = time.time()
@@ -141,6 +151,21 @@ def led_thread(strip):
 # ── Flask Web Server ────────────────────────────────────────────
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
+
+
+# ── Admin Auth Helper ───────────────────────────────────────────
+
+def admin_required(f):
+    """Decorator: require admin login via session cookie."""
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get("admin"):
+            if request.is_json:
+                return jsonify({"error": "Unauthorized"}), 401
+            return redirect(url_for("admin_login"))
+        return f(*args, **kwargs)
+    return wrapper
 
 @app.route("/")
 def index():
@@ -175,9 +200,79 @@ def api_message():
     log.info(f"Message queued from web: '{msg}'")
     return jsonify({"success": True, "message": msg})
 
+# ── Admin Routes ────────────────────────────────────────────────
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        pw = request.form.get("password", "")
+        if pw == ADMIN_PASSWORD:
+            session["admin"] = True
+            return redirect(url_for("admin_page"))
+        return render_template("admin_login.html", error="Wrong password")
+    return render_template("admin_login.html", error=None)
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin", None)
+    return redirect(url_for("index"))
+
+
+@app.route("/admin")
+@admin_required
+def admin_page():
+    return render_template("admin.html")
+
+
+@app.route("/api/admin/config", methods=["GET"])
+@admin_required
+def api_admin_get_config():
+    return jsonify(config.get_all())
+
+
+@app.route("/api/admin/config", methods=["POST"])
+@admin_required
+def api_admin_set_config():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data"}), 400
+    try:
+        config.update_all(data)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/test-led", methods=["POST"])
+@admin_required
+def api_admin_test_led():
+    data = request.get_json()
+    if not data or "led_index" not in data:
+        return jsonify({"error": "No led_index provided"}), 400
+
+    idx = int(data["led_index"])
+    if idx < 0 or idx >= NUM_LEDS:
+        return jsonify({"error": f"LED index must be 0-{NUM_LEDS - 1}"}), 400
+
+    def flash_led():
+        if _strip is None:
+            return
+        with led_lock:
+            old_color = _strip[idx]
+            _strip[idx] = (255, 255, 255)
+            _strip.show()
+            time.sleep(3)
+            _strip[idx] = old_color
+            _strip.show()
+
+    threading.Thread(target=flash_led, daemon=True).start()
+    return jsonify({"success": True, "led_index": idx})
+
 # ── Main ────────────────────────────────────────────────────────
 
 def main():
+    global _strip
     log.info("=" * 50)
     log.info("Stranger Things Wall Lights")
     log.info("=" * 50)
@@ -187,8 +282,12 @@ def main():
         log.error("Must run as root (sudo) for LED control!")
         sys.exit(1)
 
+    # Load persistent config (letter map, default message, etc.)
+    config.load()
+
     # Initialize LED strip
     strip = create_strip()
+    _strip = strip
     log.info(f"LED strip initialized: {NUM_LEDS} LEDs on GPIO 18")
 
     # Start LED control thread

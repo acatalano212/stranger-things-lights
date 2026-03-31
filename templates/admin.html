@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Stranger Things Lights</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0a;
+            color: #d4c5a0;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Special Elite', cursive;
+            font-size: 1.5rem;
+            color: #c0392b;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-align: center;
+            margin-bottom: 6px;
+            text-shadow: 0 0 15px rgba(192, 57, 43, 0.4);
+        }
+
+        .nav {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .nav a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .nav a:hover { color: #c0392b; }
+
+        /* Sections */
+        .section {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            font-family: 'Special Elite', cursive;
+            font-size: 1rem;
+            color: #c0392b;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #222;
+        }
+
+        /* Default message */
+        .msg-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .msg-row input {
+            flex: 1;
+        }
+
+        /* Interval */
+        .interval-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .interval-row label {
+            font-size: 0.8rem;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        .interval-row input {
+            width: 100px;
+        }
+
+        .interval-row .unit {
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+        /* Letter grid */
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .letter-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #0d0d0d;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 6px 8px;
+        }
+
+        .letter-cell .letter {
+            font-family: 'Special Elite', cursive;
+            font-size: 1.2rem;
+            color: #c0392b;
+            width: 22px;
+            text-align: center;
+        }
+
+        .letter-cell input {
+            width: 48px;
+            text-align: center;
+            padding: 4px;
+        }
+
+        .letter-cell .test-btn {
+            background: none;
+            border: 1px solid #333;
+            color: #888;
+            border-radius: 3px;
+            padding: 3px 6px;
+            cursor: pointer;
+            font-size: 0.65rem;
+            white-space: nowrap;
+        }
+
+        .letter-cell .test-btn:hover {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+
+        .letter-cell .test-btn.active {
+            border-color: #ffaa00;
+            color: #ffaa00;
+            background: rgba(255, 170, 0, 0.1);
+        }
+
+        /* Shared input styles */
+        input[type="text"],
+        input[type="number"] {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 3px;
+            color: #d4c5a0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            padding: 8px 10px;
+            outline: none;
+            text-transform: uppercase;
+        }
+
+        input:focus {
+            border-color: #c0392b;
+            box-shadow: 0 0 8px rgba(192, 57, 43, 0.2);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: 1px solid #c0392b;
+            border-radius: 4px;
+            color: #d4c5a0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(180deg, #8b1a1a, #5a1010);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(180deg, #a52020, #6b1515);
+            box-shadow: 0 0 15px rgba(192, 57, 43, 0.3);
+        }
+
+        .btn-secondary {
+            background: #1a1a1a;
+            border-color: #444;
+        }
+
+        .btn-secondary:hover {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: rgba(39, 174, 96, 0.9);
+            color: #fff;
+        }
+
+        .toast.error {
+            background: rgba(192, 57, 43, 0.9);
+            color: #fff;
+        }
+
+        /* Test LED section */
+        .test-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        .test-row label {
+            font-size: 0.8rem;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        .test-row input { width: 70px; }
+
+        .help-text {
+            font-size: 0.7rem;
+            color: #555;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙ Admin Panel</h1>
+        <div class="nav"><a href="/">← Back to message page</a></div>
+
+        <!-- Default Message -->
+        <div class="section">
+            <h2>Default Message</h2>
+            <div class="msg-row">
+                <input type="text" id="defaultMessage" placeholder="RUN WILL RUN" maxlength="50"
+                       autocomplete="off" autocorrect="off" spellcheck="false">
+            </div>
+            <div class="interval-row">
+                <label>Play every</label>
+                <input type="number" id="messageInterval" min="10" max="3600" step="10">
+                <span class="unit">seconds</span>
+            </div>
+        </div>
+
+        <!-- Letter Mapping -->
+        <div class="section">
+            <h2>Letter → LED Mapping</h2>
+            <p class="help-text">
+                Set which LED index (0–49) each letter maps to.
+                Use 💡 to flash that LED white for 3 seconds to identify it on the strand.
+            </p>
+            <div class="letter-grid" id="letterGrid"></div>
+
+            <div class="test-row">
+                <label>Test LED #</label>
+                <input type="number" id="testLedIndex" min="0" max="49" value="0">
+                <button class="btn btn-secondary" onclick="testLed()">💡 Flash</button>
+            </div>
+        </div>
+
+        <!-- Save -->
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="loadConfig()">↻ Reload</button>
+            <button class="btn btn-primary" id="saveBtn" onclick="saveConfig()">Save Changes</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let currentConfig = {};
+
+        function showToast(msg, type = 'success') {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.className = `toast ${type} show`;
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        function buildGrid(letterMap) {
+            const grid = document.getElementById('letterGrid');
+            grid.innerHTML = '';
+
+            for (const ch of LETTERS) {
+                const cell = document.createElement('div');
+                cell.className = 'letter-cell';
+
+                const label = document.createElement('span');
+                label.className = 'letter';
+                label.textContent = ch;
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = 0;
+                input.max = 99;
+                input.value = letterMap[ch] ?? 0;
+                input.id = `map-${ch}`;
+
+                const btn = document.createElement('button');
+                btn.className = 'test-btn';
+                btn.textContent = '💡';
+                btn.title = `Flash LED ${input.value}`;
+                btn.onclick = () => testLed(parseInt(input.value));
+
+                // Update button when value changes
+                input.addEventListener('change', () => {
+                    btn.title = `Flash LED ${input.value}`;
+                });
+
+                cell.appendChild(label);
+                cell.appendChild(input);
+                cell.appendChild(btn);
+                grid.appendChild(cell);
+            }
+        }
+
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/admin/config');
+                currentConfig = await res.json();
+                document.getElementById('defaultMessage').value = currentConfig.default_message || '';
+                document.getElementById('messageInterval').value = currentConfig.message_interval || 300;
+                buildGrid(currentConfig.letter_map || {});
+                showToast('Config loaded');
+            } catch (e) {
+                showToast('Failed to load config', 'error');
+            }
+        }
+
+        async function saveConfig() {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+
+            const letterMap = {};
+            for (const ch of LETTERS) {
+                const input = document.getElementById(`map-${ch}`);
+                letterMap[ch] = parseInt(input.value) || 0;
+            }
+
+            const data = {
+                letter_map: letterMap,
+                default_message: document.getElementById('defaultMessage').value.toUpperCase().trim(),
+                message_interval: parseInt(document.getElementById('messageInterval').value) || 300,
+            };
+
+            try {
+                const res = await fetch('/api/admin/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showToast('Settings saved ✓');
+                } else {
+                    showToast(result.error || 'Save failed', 'error');
+                }
+            } catch (e) {
+                showToast('Save failed — connection error', 'error');
+            }
+
+            btn.disabled = false;
+        }
+
+        async function testLed(index) {
+            if (index === undefined) {
+                index = parseInt(document.getElementById('testLedIndex').value);
+            }
+            if (isNaN(index) || index < 0) return;
+
+            try {
+                const res = await fetch('/api/admin/test-led', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ led_index: index }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Flashing LED #${index}`);
+                } else {
+                    showToast(data.error || 'Test failed', 'error');
+                }
+            } catch (e) {
+                showToast('Connection error', 'error');
+            }
+        }
+
+        // Load config on page open
+        loadConfig();
+    </script>
+</body>
+</html>

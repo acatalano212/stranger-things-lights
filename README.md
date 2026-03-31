@@ -1,63 +1,72 @@
 # Stranger Things Wall Lights 💡
 
-Recreate the iconic Stranger Things alphabet wall with real Christmas lights. A string of 100 WS2811 RGB LEDs mounted on a wall, spelling out messages letter by letter — just like Joyce's wall in the show.
+Recreate the iconic Stranger Things alphabet wall with real Christmas lights. 100 WS2811 RGB LEDs mounted on a wall, spelling out messages letter by letter — just like Joyce's wall in the show.
+
+Runs on a **Seeed XIAO ESP32-S3** with MicroPython. Tiny footprint, WiFi built-in, reliable LED timing via the RMT peripheral.
 
 ## Features
 
-- 🎄 **Christmas Light Idle** — warm twinkling colors on all 100 LEDs
-- ✉️ **Message Spelling** — dramatic flicker, then letters light up one at a time
-- 📱 **QR Code Web Page** — visitors can send custom messages through the lights
-- 👻 **Motion Detection** — optional PIR sensor triggers spooky Upside Down effects
-- 🔊 **Sound Effects** — optional speaker plays atmospheric sounds
+- 🎄 **Christmas Light Idle** — warm twinkling colors (red, green, blue, yellow, purple) on all 100 LEDs
+- ✉️ **Message Spelling** — dramatic flicker transition, then letters light up one at a time
+- 📱 **Web Interface** — visitors scan a QR code and send custom messages through the lights
+- ⚙️ **Admin Panel** — password-protected page to remap letters, change default message, and test individual LEDs
+- 👻 **Motion Detection** — optional AM312 PIR sensor triggers spooky Upside Down effects (GPIO 2)
 
 ## Hardware
 
 | Component | Details |
 |-----------|---------|
-| Controller | Raspberry Pi 3B+ |
-| LEDs | 100x WS2811 RGB (12V, individually addressable) |
-| Power | 12V power supply (5A+ recommended) |
-| Level Shifter | SN74AHCT125 or similar (3.3V → 5V for data line) |
-| Speaker | 3W 8Ω with JST-PH2.0 (driven via PAM8403 amp) |
-| Motion Sensor | PIR sensor (optional) |
+| Controller | Seeed XIAO ESP32-S3 |
+| LEDs | 100x BTF-LIGHTING WS2811 12mm F8 RGB (12V, individually addressable) |
+| Power | 12V Molex adapter (12V on pin 1, 5V on pin 4) |
+| Motion Sensor | AM312 PIR (optional, 3.3V) |
 
 ## Wiring
 
 ```
-12V Power Supply
-  ├── +12V ──→ WS2811 LED string +12V (red wire)
-  ├── GND ───→ WS2811 LED string GND (white wire)
-  │            └── ALSO connect to Pi GND (Pin 6)
-  │
-Raspberry Pi 3B+
-  ├── GPIO 18 (Pin 12) ──→ Level Shifter IN
-  ├── 3.3V (Pin 1) ──────→ Level Shifter LV
-  ├── GND (Pin 6) ───────→ Level Shifter GND (both sides)
-  ├── GPIO 17 (Pin 11) ──→ PIR sensor OUT (optional)
-  ├── 3.5mm jack ────────→ PAM8403 amp input(optional)
-  │
-Level Shifter (SN74AHCT125)
-  ├── HV ────────→ 5V (Pi Pin 2)
-  └── OUT ───────→ WS2811 DATA (green wire)
+12V Molex Power Adapter
+  ├── Pin 1 (12V) ──→ WS2811 LED string V+ (red wire)
+  ├── Pin 4 (5V)  ──→ XIAO ESP32-S3 5V pin
+  └── GND ─────────→ Shared ground (LEDs + XIAO)
 
-⚡ Add a 300-470Ω resistor on the data line near the first LED
-⚡ Add a 1000µF capacitor across +12V/GND near the first LED
-⚡ Common ground between 12V supply, Pi, and LEDs is CRITICAL
+XIAO ESP32-S3
+  ├── D0 (GPIO 1) ──→ WS2811 Data In (green/white wire)
+  ├── 5V ───────────→ Molex 5V (pin 4)
+  ├── GND ──────────→ Molex GND (shared with LEDs)
+  └── D1 (GPIO 2) ──→ AM312 PIR OUT (optional)
+
+AM312 PIR Sensor (optional)
+  ├── VCC ──→ XIAO 3.3V
+  ├── GND ──→ XIAO GND
+  └── OUT ──→ XIAO D1 (GPIO 2)
+
+⚡ Common ground between power supply, XIAO, and LEDs is CRITICAL
+⚡ No level shifter needed — 3.3V GPIO works with these WS2811 LEDs
+⚡ XIAO can be powered via USB and 5V pin simultaneously (safe)
+```
+
+## XIAO ESP32-S3 Pinout
+
+```
+        ┌──────────────┐
+        │   USB-C      │
+   ─────┤              ├─────
+   D0/A0│ 1  (GPIO1)   │ 5V    ← Molex 5V
+   D1/A1│ 2  (GPIO2)   │ GND   ← Shared GND
+   D2/A2│ 3  (GPIO3)   │ 3.3V
+   D3/A3│ 4  (GPIO4)   │
+   D4   │ 5  (GPIO5)   │
+   D5   │ 6  (GPIO6)   │
+   D6/TX│ 7  (GPIO43)  │
+   ─────┤              ├─────
+        └──────────────┘
 ```
 
 ## Letter Mapping
 
-After mounting the LED string on the wall with letters painted below, update `letter_map.py` with the actual LED index above each letter:
+Letters A-Z are mapped to LED indices 0-99 (spread evenly by default). After mounting the lights on the wall, use the **Admin Panel** to remap each letter to the actual LED sitting above it, and use the 💡 flash button to identify individual LEDs.
 
-```python
-LETTER_MAP = {
-    'A': 0,   # LED index 0 is above the letter A
-    'B': 3,   # LED index 3 is above the letter B
-    ...
-}
-```
-
-The show uses 3 rows:
+Default layout (3 rows on the wall):
 ```
 Row 1:  A  B  C  D  E  F  G  H
 Row 2:  I  J  K  L  M  N  O  P
@@ -66,83 +75,101 @@ Row 3:  Q  R  S  T  U  V  W  X  Y  Z
 
 ## Installation
 
+### Flash MicroPython
+
 ```bash
-# Clone to the Pi
-git clone <repo-url> /opt/stranger-things-lights
-cd /opt/stranger-things-lights
+# Install tools
+pip install esptool mpremote
 
-# Run the installer
-chmod +x install.sh
-sudo ./install.sh
+# Put XIAO in bootloader mode: hold BOOT, press RESET, release BOOT
+esptool --chip esp32s3 --port COM6 erase-flash
+esptool --chip esp32s3 --port COM6 write-flash 0 ESP32_GENERIC_S3-v1.27.0.bin
+```
 
-# Start the service
-sudo systemctl start stranger-things
+### Upload Project Files
 
-# View logs
-sudo journalctl -u stranger-things -f
+```bash
+cd esp32/
+mpremote connect COM6 cp boot.py :boot.py
+mpremote connect COM6 cp config.py :config.py
+mpremote connect COM6 cp led.py :led.py
+mpremote connect COM6 cp pages.py :pages.py
+mpremote connect COM6 cp main.py :main.py
+mpremote connect COM6 reset
+```
+
+### WiFi Setup
+
+Edit `esp32/boot.py` with your WiFi credentials:
+```python
+SSID = "Your-WiFi-Name"
+PASSWORD = "your-password"
 ```
 
 ## Web Interface
 
-Once running, visit the Pi's IP address in a browser to send custom messages. Generate a QR code pointing to `http://<pi-ip>/` and post it near the wall.
+Once running, the XIAO connects to WiFi and serves:
 
-Custom messages play **2 times** then revert to the default message.
+| URL | Description |
+|-----|-------------|
+| `http://<ip>/` | Message page — send messages through the lights |
+| `http://<ip>/admin` | Admin panel (password protected) |
 
-## Configuration
-
-Edit `letter_map.py` to change:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `DEFAULT_MESSAGE` | `"RUN WILL RUN"` | Message displayed every 5 minutes |
-| `MESSAGE_INTERVAL` | `300` (5 min) | Seconds between auto-messages |
-| `CUSTOM_MESSAGE_PLAYS` | `2` | Times a custom message repeats |
-| `NUM_LEDS` | `100` | Total LEDs on the string |
-| `LED_PIN` | `18` | GPIO pin (must be PWM: 18 or 12) |
-| `LED_BRIGHTNESS` | `200` | Brightness 0-255 |
-| `PIR_PIN` | `17` | GPIO for motion sensor |
-| `MOTION_COOLDOWN` | `30` | Seconds between motion triggers |
-
-## Sound Effects
-
-Sound is generated programmatically (no .wav files needed) and played through the Pi's **3.5mm audio jack** via a **PAM8403 amplifier** to the speaker:
-
-```
-Pi 3.5mm jack ──→ PAM8403 input (L or R channel + GND)
-PAM8403 output ──→ Speaker (JST-PH2.0 connector)
-PAM8403 VCC ─────→ Pi 5V (Pin 2) or 3.3V-5V source
-PAM8403 GND ─────→ Pi GND
-```
-
-Effects are generated as waveforms and played via `aplay`:
-- **Flicker sound** — electrical buzzing during message transitions
-- **Letter tones** — short pitched tone for each letter (A=low, Z=high)
-- **Spook sound** — deep drones and eerie sweeps on motion detection
-- **Startup chime** — ascending tone sequence on boot
+The admin panel lets you:
+- Change the default message and play interval
+- Remap letter-to-LED assignments (0-99)
+- Flash individual LEDs to identify them on the strand
 
 ## Project Structure
 
 ```
 stranger-things-lights/
-├── app.py                    # Main app: Flask + LED control + scheduling
-├── led_effects.py            # All LED animations and effects
-├── sound_effects.py          # GPIO PWM sound generation
-├── letter_map.py             # Configuration: letter mapping + settings
-├── requirements.txt          # Python dependencies
-├── install.sh                # Setup script
-├── stranger-things.service   # systemd unit file
-├── sounds/                   # Sound effect .wav files
-├── templates/
-│   └── index.html            # "Send to the Upside Down" web page
+├── esp32/                     # MicroPython firmware for XIAO ESP32-S3
+│   ├── boot.py                # WiFi connection on startup
+│   ├── main.py                # Web server + LED control thread
+│   ├── led.py                 # LED effects (idle, flicker, spell, spook)
+│   ├── config.py              # Persistent JSON config manager
+│   └── pages.py               # HTML pages (index, admin, login)
+├── app.py                     # Original Pi version (Flask + neopixel)
+├── led_effects.py             # Original Pi LED effects
+├── letter_map.py              # Original Pi config
+├── config.py                  # Original Pi persistent config
+├── sound_effects.py           # Pi audio (disabled — PWM conflict)
+├── templates/                 # Original Pi HTML templates
+│   ├── index.html
+│   ├── admin.html
+│   └── admin_login.html
+├── install.sh                 # Pi setup script
+├── stranger-things.service    # Pi systemd unit file
+├── requirements.txt           # Pi Python dependencies
 └── README.md
 ```
+
+## Configuration
+
+All settings are managed via the admin panel at `/admin` and stored in `config.json` on the ESP32 flash. Defaults:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `default_message` | `"RUN WILL RUN"` | Auto-plays on a timer |
+| `message_interval` | `60` seconds | Time between auto-messages |
+| `letter_map` | A=0, B=4, ... Z=99 | LED index per letter (evenly spread) |
+| `num_leds` | `100` | Total LEDs on the string |
 
 ## Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
-| No LED output | Check wiring, common ground, level shifter, GPIO 18 |
-| "Must run as root" | LEDs require root: `sudo python3 app.py` |
-| Colors look wrong | WS2811 may use GRB order — adjust in `led_effects.py` |
-| Web page won't load | Check Pi IP, ensure port 80 is free |
-| Motion sensor always triggers | Adjust PIR sensitivity pot, increase `MOTION_COOLDOWN` |
+| No LED output | Check wiring: Data → GPIO 1 (D0), common ground |
+| Colors wrong | These WS2811 use RGB order (set in `led.py`) |
+| WiFi won't connect | Check SSID/password in `boot.py`, ensure 2.4GHz network |
+| Web page won't load | Wait 8-10s after boot for WiFi, check IP in serial monitor |
+| Can't flash via USB | Hold BOOT + press RESET to enter bootloader mode |
+| Admin page error | Clear cookies, re-login with password |
+
+## Key Learnings
+
+- **No level shifter needed** for BTF-LIGHTING WS2811 12mm pixels with 3.3V GPIO
+- **ESP32-S3 RMT peripheral** provides reliable WS2811 timing (better than Pi's PWM)
+- **Pi audio conflicts with GPIO 18 PWM** — if using Pi version, set `dtparam=audio=off` in `/boot/firmware/config.txt`
+- **Color order is RGB** for these specific WS2811 LEDs (not GRB)

@@ -14,42 +14,42 @@ The show uses 3 rows of letters on the wall:
 # Map each letter to the LED index directly above it.
 # Placeholder indices — UPDATE after measuring your actual installation.
 LETTER_MAP = {
-    # Row 1: A-H
+    # Row 1: A-H (LEDs 0-7)
     'A': 0,
-    'B': 3,
-    'C': 6,
-    'D': 9,
-    'E': 12,
-    'F': 15,
-    'G': 18,
-    'H': 21,
-    # Row 2: I-P
-    'I': 25,
-    'J': 28,
-    'K': 31,
-    'L': 34,
-    'M': 37,
-    'N': 40,
-    'O': 43,
-    'P': 46,
-    # Row 3: Q-Z
-    'Q': 50,
-    'R': 53,
-    'S': 56,
-    'T': 59,
-    'U': 62,
-    'V': 65,
-    'W': 68,
-    'X': 71,
-    'Y': 74,
-    'Z': 77,
+    'B': 1,
+    'C': 2,
+    'D': 3,
+    'E': 4,
+    'F': 5,
+    'G': 6,
+    'H': 7,
+    # Row 2: I-P (LEDs 8-15)
+    'I': 8,
+    'J': 9,
+    'K': 10,
+    'L': 11,
+    'M': 12,
+    'N': 13,
+    'O': 14,
+    'P': 15,
+    # Row 3: Q-Z (LEDs 16-25)
+    'Q': 16,
+    'R': 17,
+    'S': 18,
+    'T': 19,
+    'U': 20,
+    'V': 21,
+    'W': 22,
+    'X': 23,
+    'Y': 24,
+    'Z': 25,
 }
 
 # Default message that plays every MESSAGE_INTERVAL seconds
 DEFAULT_MESSAGE = "RUN WILL RUN"
 
 # Seconds between automatic message displays
-MESSAGE_INTERVAL = 300  # 5 minutes
+MESSAGE_INTERVAL = 60  # 1 minute (for testing, change to 300 for production)
 
 # How many times a custom message plays before reverting to default
 CUSTOM_MESSAGE_PLAYS = 2
