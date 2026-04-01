@@ -126,6 +126,7 @@ def send_redirect(client, location, extra_headers=""):
 
 
 def handle_client(client):
+    client.settimeout(5)
     try:
         method, path, headers, body = parse_request(client)
         if method is None:
@@ -235,6 +236,8 @@ def handle_client(client):
         else:
             send_response(client, "404 Not Found", "text/plain", "Not Found")
 
+    except OSError:
+        pass
     except Exception as e:
         print(f"Request error: {e}")
         try:
@@ -242,7 +245,10 @@ def handle_client(client):
         except:
             pass
     finally:
-        client.close()
+        try:
+            client.close()
+        except:
+            pass
 
 
 def start_server(port=80):
@@ -251,7 +257,8 @@ def start_server(port=80):
     s = socket.socket()
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(addr)
-    s.listen(3)
+    s.listen(5)
+    s.settimeout(None)
 
     wlan = network.WLAN(network.STA_IF)
     ip = wlan.ifconfig()[0] if wlan.isconnected() else "unknown"
