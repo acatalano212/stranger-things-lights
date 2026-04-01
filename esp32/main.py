@@ -50,8 +50,8 @@ def ota_update():
 
 # ── Cloud Polling ───────────────────────────────────────────────
 
-CLOUD_API_URL = ""  # e.g. "https://xxx.azurestaticapps.net/api/get-message"
-CLOUD_DEVICE_KEY = ""  # must match DEVICE_KEY in Azure app settings
+CLOUD_API_URL = "https://green-wave-02bbd0d10.1.azurestaticapps.net/api/get-message"
+CLOUD_DEVICE_KEY = "stl-86dcf799"
 CLOUD_POLL_INTERVAL = 5
 
 
