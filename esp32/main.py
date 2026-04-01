@@ -48,6 +48,32 @@ def ota_update():
 
     return updated, errors
 
+# ── Cloud Polling ───────────────────────────────────────────────
+
+CLOUD_API_URL = ""  # e.g. "https://xxx.azurestaticapps.net/api/get-message"
+CLOUD_DEVICE_KEY = ""  # must match DEVICE_KEY in Azure app settings
+CLOUD_POLL_INTERVAL = 5
+
+
+def poll_cloud():
+    """Check Azure for pending messages. Returns message string or None."""
+    if not CLOUD_API_URL:
+        return None
+    try:
+        import urequests
+        headers = {}
+        if CLOUD_DEVICE_KEY:
+            headers["x-device-key"] = CLOUD_DEVICE_KEY
+        r = urequests.get(CLOUD_API_URL, headers=headers)
+        data = json.loads(r.text) if r.status_code == 200 else {}
+        r.close()
+        gc.collect()
+        return data.get("message")
+    except Exception as e:
+        print(f"Cloud poll error: {e}")
+        return None
+
+
 # ── State ───────────────────────────────────────────────────────
 
 message_queue = []
@@ -62,6 +88,7 @@ def led_loop():
     print("LED thread started")
     idle = led.ChristmasIdle()
     last_msg_time = time.time()
+    last_cloud_poll = 0
 
     while True:
         now = time.time()
@@ -93,6 +120,16 @@ def led_loop():
         # Idle animation step
         idle.step()
         time.sleep_ms(50)
+
+        # Cloud polling (during idle only)
+        if CLOUD_API_URL and now - last_cloud_poll >= CLOUD_POLL_INTERVAL:
+            last_cloud_poll = now
+            cloud_msg = poll_cloud()
+            if cloud_msg:
+                print(f"Cloud message: {cloud_msg}")
+                queue_lock.acquire()
+                message_queue.append(cloud_msg)
+                queue_lock.release()
 
 
 # ── HTTP Server ─────────────────────────────────────────────────

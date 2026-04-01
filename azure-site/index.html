@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Under the Glass — Send a Message</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAD2UExURWBUPq+VY66UYyYlJKuSYq6UY56IXK6UYyspJq6UY2BVPyUlIywqJquSYq+VZK6UY66UYyMiIiEhIUlCNLCWZJiDWa2TY0pDNHNkRyMiIkQ9MSspJoFvTqyTYiUkI7CWZE1FNiMiIq2UY4VzUCIiISIiIUM9MSIiISEhIVVLOSIiIZN+VoVzULCWZJqEWicmJK+VZD45LzYyK6uSYkU+MiwqJq+VY2VZQWpdQyIiIrCWZJ6IXEhBM0Q9MXdoSa+VZDIvKbCWZCEhISEhISEhISIiIiEhIa6VY39uTbCWZFJJODMwKqaOX6mQYZmDWa+VZE1FNv////D4X5kAAABRdFJOUwAXVhQdp7pie0eGPXLBk3YzaSuF26UoDJRMfICXvWPofUM4m1Rbgxw2kSVDoS4kbKNnSrpUbbuRi42JsESTjLMzbZrC4tK9fpr2fnuztaiDK4WS40YAAAABYktHRFGUaXwqAAAAB3RJTUUH6QsWExspCtmXZwAAAaNJREFUOMu1kV17mkAUhCeurKiAFTULdpcIQiCbVhqLpzaiien3d///r+lN1JBQr9pzd555n9mzM8C/nZNGgx3TmwbnxskRoMVN02gfeYB3upbt9J79DWjwvjsY8pF9Wq8Lw/N9zx4/l0490FYmC0Znk3BgR7UGzjQWpm3LOJk6ogaI1HmaXagWt/S5fVkDyBcBYsdL1UDH0nhq8VKZM+SvruA5cWrx+ROgZ/TBOq81itFChJIeWzRVJ0P2hgChLwUbG8XjlI0FkHhLAOFbhvB6VW2N8WUIMaYSgFjHYLm6qgBzbgnozY2eA8hCIJMVC0GyBEKPxIYBEIDI6aHFLfUZsHC2uFu7zWzhCmSS0gNA1wnALBXBfff+w8c4cIGcJntd00QD7oUSQBonac+JAffTjd6n7AUA/Omu5jbPBcTiM93vqd2KuhECKg6pnbK539pd0V1NorPhbKwOljLZfvlq0e3uD7kmJ9zQ/qhSWS6V377fA+kP6c+y3Ogdgv0pg27jl9plVSi57ozoQXTlypDOsNzvBZGSlYJ/L2mrK20J/K/5A4f8Lde257yeAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI1LTExLTIyVDE5OjI3OjM5KzAwOjAwHTGUngAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNS0xMS0yMlQxOToyNzozOSswMDowMGxsLCIAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjUtMTEtMjJUMTk6Mjc6MzkrMDA6MDA7eQ39AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAABJRU5ErkJggg==">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#d4c5a0;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.c{max-width:420px;width:100%;text-align:center}
+h1{font-size:1.8rem;color:#c0392b;letter-spacing:6px;margin-bottom:8px;text-shadow:0 0 20px rgba(192,57,43,.5)}
+.sub{font-size:.85rem;color:#666;letter-spacing:3px;margin-bottom:30px}
+input[type="text"]{width:100%;padding:16px;background:#111;border:1px solid #333;border-radius:6px;color:#d4c5a0;font-family:'Courier New',monospace;font-size:1.2rem;text-align:center;text-transform:uppercase;letter-spacing:4px;outline:none}
+input:focus{border-color:#c0392b;box-shadow:0 0 15px rgba(192,57,43,.3)}
+.cc{font-size:.7rem;color:#444;margin:8px 0 16px}
+button{width:100%;padding:16px;background:linear-gradient(180deg,#8b1a1a,#5a1010);border:1px solid #c0392b;border-radius:6px;color:#d4c5a0;font-family:'Courier New',monospace;font-size:1rem;letter-spacing:3px;cursor:pointer;text-transform:uppercase}
+button:hover{box-shadow:0 0 20px rgba(192,57,43,.4)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.st{margin-top:20px;padding:12px;border-radius:6px;font-size:.85rem;min-height:44px;display:flex;align-items:center;justify-content:center}
+.st.idle{background:rgba(255,255,255,.03);color:#555}
+.st.ok{background:rgba(39,174,96,.12);color:#27ae60}
+.st.err{background:rgba(192,57,43,.12);color:#e74c3c}
+.ft{margin-top:40px;font-size:.6rem;color:#222;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div class="c">
+<h1>THE UPSIDE DOWN</h1>
+<p class="sub">Send a message through the lights</p>
+<input type="text" id="msg" placeholder="TYPE YOUR MESSAGE..." maxlength="50" autocomplete="off" spellcheck="false">
+<p class="cc"><span id="count">0</span>/50</p>
+<button id="btn" onclick="send()">Send to the Upside Down</button>
+<div class="st idle" id="status">Waiting for your message...</div>
+<p class="ft">Under the Glass Pinball</p>
+</div>
+<script>
+const msg=document.getElementById('msg'),btn=document.getElementById('btn'),st=document.getElementById('status'),ct=document.getElementById('count');
+msg.addEventListener('input',function(){this.value=this.value.replace(/[^a-zA-Z ]/g,'').toUpperCase();ct.textContent=this.value.length});
+msg.addEventListener('keydown',function(e){if(e.key==='Enter')send()});
+async function send(){
+const t=msg.value.trim();if(!t){st.textContent='Type a message first!';st.className='st err';return}
+btn.disabled=true;st.textContent='Sending to the lights...';st.className='st idle';
+try{const r=await fetch('/api/submit-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
+const d=await r.json();
+if(d.success){st.textContent='"'+t+'" is on its way to the lights!';st.className='st ok';msg.value='';ct.textContent='0';
+setTimeout(()=>{st.textContent='Waiting for your message...';st.className='st idle';btn.disabled=false},15000)}
+else{st.textContent=d.error||'Something went wrong';st.className='st err';btn.disabled=false}}
+catch(e){st.textContent='Connection failed — try again';st.className='st err';btn.disabled=false}}
+</script>
+</body>
+</html>
