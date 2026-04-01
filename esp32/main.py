@@ -10,9 +10,43 @@ import socket
 import _thread
 import network
 
+import gc
 import config
 import led
 from pages import INDEX_PAGE, LOGIN_PAGE, ADMIN_PAGE, ADMIN_PASSWORD
+
+# ── OTA Update ──────────────────────────────────────────────────
+
+REPO_RAW = "https://raw.githubusercontent.com/acatalano212/stranger-things-lights/master/esp32/"
+OTA_FILES = ["pages.py", "config.py", "led.py", "main.py", "boot.py"]
+
+
+def ota_update():
+    """Download latest files from GitHub and write to flash."""
+    import urequests
+    updated = []
+    errors = []
+
+    for fname in OTA_FILES:
+        gc.collect()
+        try:
+            url = REPO_RAW + fname
+            print(f"OTA: fetching {fname}...")
+            r = urequests.get(url)
+            if r.status_code == 200:
+                with open(fname, "w") as f:
+                    f.write(r.text)
+                updated.append(fname)
+                print(f"OTA: updated {fname}")
+            else:
+                errors.append(f"{fname}: HTTP {r.status_code}")
+                print(f"OTA: failed {fname} ({r.status_code})")
+            r.close()
+        except Exception as e:
+            errors.append(f"{fname}: {str(e)}")
+            print(f"OTA: error {fname}: {e}")
+
+    return updated, errors
 
 # ── State ───────────────────────────────────────────────────────
 
@@ -232,6 +266,20 @@ def handle_client(client):
                     send_json(client, {"error": "Invalid index"}, "400 Bad Request")
             except Exception as e:
                 send_json(client, {"error": str(e)}, "400 Bad Request")
+
+        elif path == "/api/admin/ota-update" and method == "POST":
+            if not is_admin(headers):
+                send_json(client, {"error": "Unauthorized"}, "401 Unauthorized")
+                return
+            try:
+                updated, errors = ota_update()
+                send_json(client, {"success": len(errors) == 0, "updated": updated, "errors": errors})
+                if not errors:
+                    import machine
+                    time.sleep(1)
+                    machine.reset()
+            except Exception as e:
+                send_json(client, {"error": str(e)}, "500 Error")
 
         else:
             send_response(client, "404 Not Found", "text/plain", "Not Found")

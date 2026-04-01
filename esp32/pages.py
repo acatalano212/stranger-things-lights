@@ -128,6 +128,10 @@ input:focus{border-color:#c0392b}
 <div class="acts">
 <button class="btn bs" onclick="loadCfg()">Reload</button>
 <button class="btn bp" id="sv" onclick="saveCfg()">Save</button>
+</div>
+<div class="sec" style="margin-top:16px"><h2>System</h2>
+<p class="help">Pull latest code from GitHub and reboot. Device will be offline briefly.</p>
+<div class="acts" style="margin-top:10px"><button class="btn bs" id="ota" onclick="otaUpdate()">Update from GitHub</button></div>
 </div></div>
 <div class="toast" id="t"></div>
 <script>
@@ -147,5 +151,11 @@ const d=await r.json();toast(d.success?'Saved!':'Error',d.success)}catch(e){toas
 async function testLed(i){if(i===undefined)i=parseInt(document.getElementById('ti').value);
 try{await fetch('/api/admin/test-led',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({led_index:i})});
 toast('Flashing LED #'+i,true)}catch(e){toast('Error',false)}}
+async function otaUpdate(){if(!confirm('Pull latest code from GitHub and reboot?'))return;
+const b=document.getElementById('ota');b.disabled=true;b.textContent='Updating...';toast('Downloading from GitHub...',true);
+try{const r=await fetch('/api/admin/ota-update',{method:'POST'});const d=await r.json();
+if(d.success){toast('Updated! Rebooting...',true);setTimeout(()=>location.reload(),5000)}
+else{toast('Errors: '+d.errors.join(', '),false);b.disabled=false;b.textContent='Update from GitHub'}}
+catch(e){toast('Update failed',false);b.disabled=false;b.textContent='Update from GitHub'}}
 loadCfg();
 </script></body></html>"""
